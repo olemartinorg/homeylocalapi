@@ -2,11 +2,13 @@
   "title": {
     "en": "Respond with 200",
     "it": "Rispondi con codice 200",
-    "de": "Mit Status code 200 antworten"
+    "de": "Mit Status code 200 antworten",
+    "no": "Svar med 200 OK"
   },
   "hint": {
     "en": "Send an empty response with status OK (http 200)",
     "it": "Invia una risposta vuota con stato OK (http 200)",
-    "de": "Sende eine leere Antwort mit den Status OK (http 200)"
+    "de": "Sende eine leere Antwort mit den Status OK (http 200)",
+    "no": "Send et tomt svar med status OK (http 200)"
   }
 }

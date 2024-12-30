@@ -30,5 +30,9 @@
   "1.1.4": {
     "en": "Bugfix in server",
     "it": "Bugfix su server"
+  },
+  "1.2.0": {
+    "en": "Added support for query parameters and request body and raw outputs",
+    "no": "Lagt til støtte for spørringsparametere, body i forespørsler, rå utdata og norsk oversettelse"
   }
 }

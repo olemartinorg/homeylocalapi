@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "dev.dadda.localapi",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "platforms": [
@@ -10,12 +10,14 @@
   "name": {
     "en": "Local API",
     "it": "Local API",
-    "de": "Local API"
+    "de": "Local API",
+    "no": "Lokalt API"
   },
   "description": {
     "en": "Local API Creator directly hosted and served from your Homey Hub",
     "it": "Creatore di API locali hostato e servito dal tuo Hub Homey",
-    "de": "Eine Locale API erstellen und diese wird direkt auf dem Homey verarbeitet"
+    "de": "Eine Locale API erstellen und diese wird direkt auf dem Homey verarbeitet",
+    "no": "Lar deg lage et lokalt API servert fra din Homey"
   },
   "category": [
     "internet"
@@ -46,6 +48,10 @@
       {
         "name": "spkesDE",
         "email": "spkes@spkes.de"
+      },
+      {
+        "name": "olemartinorg",
+        "email": "homeytranslations@olemartin.org"
       }
     ]
   },
@@ -67,12 +73,14 @@
         "title": {
           "en": "A local API request is received",
           "it": "Una richiesta API locale è stata ricevuta",
-          "de": "Eine lokale API-Anforderung wird empfangen"
+          "de": "Eine lokale API-Anforderung wird empfangen",
+          "no": "En lokal API-forespørsel ble mottatt"
         },
         "titleFormatted": {
           "en": "A [[method]] request received on url [[url]]",
           "it": "Una richiesta [[method]] è stata ricevuta all'indirizzo [[url]]",
-          "de": "Eine [[method]]-Anfrage mit der URL [[url]] wurde empfangen"
+          "de": "Eine [[method]]-Anfrage mit der URL [[url]] wurde empfangen",
+          "no": "En [[method]]-forespørsel ble mottatt på url [[url]]"
         },
         "args": [
           {
@@ -81,7 +89,8 @@
             "placeholder": {
               "en": "/test",
               "it": "/test",
-              "de": "/test"
+              "de": "/test",
+              "no": "/test"
             }
           },
           {
@@ -93,7 +102,8 @@
                 "label": {
                   "en": "GET",
                   "it": "GET",
-                  "de": "GET"
+                  "de": "GET",
+                  "no": "GET"
                 }
               },
               {
@@ -101,7 +111,8 @@
                 "label": {
                   "en": "POST",
                   "it": "POST",
-                  "de": "POST"
+                  "de": "POST",
+                  "no": "POST"
                 }
               }
             ]
@@ -115,12 +126,14 @@
         "title": {
           "en": "Respond with 200",
           "it": "Rispondi con codice 200",
-          "de": "Mit Status code 200 antworten"
+          "de": "Mit Status code 200 antworten",
+          "no": "Svar med 200 OK"
         },
         "hint": {
           "en": "Send an empty response with status OK (http 200)",
           "it": "Invia una risposta vuota con stato OK (http 200)",
-          "de": "Sende eine leere Antwort mit den Status OK (http 200)"
+          "de": "Sende eine leere Antwort mit den Status OK (http 200)",
+          "no": "Send et tomt svar med status OK (http 200)"
         },
         "id": "local-api-respond-with-200"
       },
@@ -128,17 +141,20 @@
         "title": {
           "en": "Respond with...",
           "it": "Rispondi con...",
-          "de": "Anworte mit..."
+          "de": "Anworte mit...",
+          "no": "Svar med..."
         },
         "titleFormatted": {
           "en": "Respond with [[body]] JSON.",
           "it": "Rispondi con [[body]] JSON.",
-          "de": "Antworte mit [[body]] JSON."
+          "de": "Antworte mit [[body]] JSON.",
+          "no": "Svar med JSON-objektet [[body]]"
         },
         "hint": {
           "en": "Personalize the response object",
           "it": "Personalizza la risposta",
-          "de": "Personalisieren das Antwortobject"
+          "de": "Personalisieren das Antwortobject",
+          "no": "Tilpass svarobjektet"
         },
         "args": [
           {
@@ -147,7 +163,8 @@
             "placeholder": {
               "en": "Body JSON response",
               "it": "Risposta JSON",
-              "de": "JSON Antwort"
+              "de": "JSON Antwort",
+              "no": "JSON-svar"
             }
           }
         ],

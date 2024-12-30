@@ -2,17 +2,20 @@
   "title": {
     "en": "Respond with...",
     "it": "Rispondi con...",
-    "de": "Anworte mit..."
+    "de": "Anworte mit...",
+    "no": "Svar med..."
   },
   "titleFormatted": {
     "en": "Respond with [[body]] JSON.",
     "it": "Rispondi con [[body]] JSON.",
-    "de": "Antworte mit [[body]] JSON."
+    "de": "Antworte mit [[body]] JSON.",
+    "no": "Svar med JSON-objektet [[body]]"
   },
   "hint": {
     "en": "Personalize the response object",
     "it": "Personalizza la risposta",
-    "de": "Personalisieren das Antwortobject"
+    "de": "Personalisieren das Antwortobject",
+    "no": "Tilpass svarobjektet"
   },
   "args": [
     {
@@ -21,7 +24,8 @@
       "placeholder": {
         "en": "Body JSON response",
         "it": "Risposta JSON",
-        "de": "JSON Antwort"
+        "de": "JSON Antwort",
+        "no": "JSON-svar"
       }
     }
   ]
