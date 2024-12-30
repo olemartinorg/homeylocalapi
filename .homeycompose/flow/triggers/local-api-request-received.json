@@ -11,6 +11,40 @@
     "de": "Eine [[method]]-Anfrage mit der URL [[url]] wurde empfangen",
     "no": "En [[method]]-forespørsel ble mottatt på url [[url]]"
   },
+  "tokens": [
+    {
+      "name": "query",
+      "title": {
+        "en": "Query parameters",
+        "no": "Spørringsparametre"
+      },
+      "type": "string",
+      "example":{
+        "en": "{ \"key\": \"value\" }",
+        "no": "{ \"nøkkel\": \"verdi\" }"
+      }
+    },
+    {
+      "name": "body",
+      "title": {
+        "en": "Body",
+        "no": "Body"
+      },
+      "type": "string"
+    },
+    {
+      "name": "headers",
+      "title": {
+        "en": "Headers",
+        "no": "Headere"
+      },
+      "type": "string",
+      "example": {
+        "en": "{ \"User-Agent\": \"curl\" }",
+        "no": "{ \"User-Agent\": \"curl\" }"
+      }
+    }
+  ],
   "args": [
     {
       "type": "text",
