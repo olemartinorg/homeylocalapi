@@ -37,6 +37,10 @@
     <label class="homey-form-label" for="cors-acao" data-i18n="settings.corsAccessControlAllowOrigin.label">Access-Control-Allow-Origin</label>
     <input class="homey-form-input" id="cors-acao" type="text" value="*" />
   </div>
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="raw-outputs" data-i18n="settings.raw.label">Return raw JSON?</label>
+    <input class="homey-form-input" id="raw-outputs" type="checkbox" value="0" /> (will pack responses in 'result' objects by default)
+  </div>
 </fieldset>
 
 <button id="save" class="homey-button-primary-full" data-i18n="settings.save">Save</button>
@@ -46,6 +50,7 @@
     // Identify the elements we need to interact with
     const portInput = document.getElementById('server-port');
     const corsSelect = document.getElementById('cors-enabled');
+    const rawOutputCheckbox = document.getElementById('raw-outputs');
     const saveButton = document.getElementById('save');
     const additionalCorsSettings = document.getElementById('additional-cors-settings');
     const corsAcaoInput = document.getElementById('cors-acao');
@@ -72,6 +77,11 @@
     Homey.get('corsAcao', (err, corsAcao) => {
       if (err) return console.error(err);
       corsAcaoInput.value = corsAcao;
+      displayCorsSettings();
+    });
+    Homey.get('rawOutput', (err, rawOutput) => {
+      if (err) return console.error(err);
+      rawOutputCheckbox.checked = !!rawOutput;
     });
     // Add event listeners
     saveButton.addEventListener('click', () => {
@@ -82,6 +92,9 @@
         if (err) return Homey.alert(err);
       });
       Homey.set('corsAcao', corsAcaoInput.value, function (err) {
+        if (err) return Homey.alert(err);
+      });
+      Homey.set('rawOutput', rawOutputCheckbox.checked ? 1 : 0, function (err) {
         if (err) return Homey.alert(err);
       });
     });

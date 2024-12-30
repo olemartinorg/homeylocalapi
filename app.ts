@@ -131,9 +131,13 @@ class LocalApi extends Homey.App {
             });
           });
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.write(JSON.stringify({
-            status: 'success', url: req.url, method: req.method, data: argVal,
-          }));
+          if (this.homey.settings.get('rawOutput')) {
+            res.write(JSON.stringify(argVal));
+          } else {
+            res.write(JSON.stringify({
+              status: 'success', url: req.url, method: req.method, data: argVal,
+            }));
+          }
         } catch (e) {
           this.error(e);
         }
