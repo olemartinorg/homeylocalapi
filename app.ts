@@ -14,6 +14,20 @@ interface LocalApiRequestArgs {
   method: 'get' | 'post' | undefined;
 }
 
+interface LocalApiRequestWithBodyArgs extends LocalApiRequestArgs {
+  body: string;
+}
+
+interface LocalApiRequestWithObjArgs extends LocalApiRequestArgs {
+  response: string; // Should contain JSON string with type: { status: number, headers?: Record<string, string>, body?: string }
+}
+
+interface LocalApiRequestAdvancedArgs extends LocalApiRequestArgs {
+  status: number;
+  headers: string;
+  body: string;
+}
+
 interface LocalApiFlowTokens {
   // All of these are JSON strings. Tokens are defined in `local-api-request-received.json`.
   body: string;
@@ -22,20 +36,29 @@ interface LocalApiFlowTokens {
 }
 
 type LocalApiResponse = {
-  type: 'no-body'; data: { status: 'ok' };
+  // This is the response used when returning the simple 'OK' flow card
+  type: 'legacy-no-body'; data: { status: 'ok' }; packInObject: true;
 } | {
-  type: 'body-json'; data: object;
+  // Used by the simple response flow card when parsing the response fails
+  type: 'legacy-invalid-json'; message: string, error: string | undefined, original: string | undefined; packInObject: true;
 } | {
-  type: 'body-invalid-json'; message: string, error: string | undefined, original: string | undefined;
+  // used by the simple response flow card when returning a JSON object
+  type: 'legacy-json'; data: object; packInObject: true;
 } | {
-  type: 'timeout';
+  // Advanced flow cards (v1.2.0+)
+  type: 'advanced-response'; status: number; headers?: Record<string, string>; body?: unknown; packInObject: false;
+} | {
+  // Used by newer advanced response flow cards, when parsing the response fails
+  type: 'advanced-error'; message: string; error: string | undefined; packInObject: false;
+} | {
+  type: 'timeout'; packInObject: false;
 };
 
 const FLOW_CARD_CONFLICT = Symbol('FLOW_CARD_CONFLICT');
 
 class LocalApi extends Homey.App {
 
-  TIMEOUT = 5000; // In milliseconds (= 5 seconds)
+  TIMEOUT = 30000; // In milliseconds (= 30 seconds)
 
   idCounter = 0;
   localApiEvent: EventEmitter = new EventEmitter();
@@ -99,8 +122,8 @@ class LocalApi extends Homey.App {
    */
   responseWithOkRunListener = async (args: LocalApiRequestArgs, state: LocalApiRequestState) => {
     try {
-      const response: LocalApiResponse = { type: 'no-body', data: { status: 'ok' } };
-      this.localApiEvent.emit(`responseAction/${state.id}`, response);
+      const response: LocalApiResponse = { type: 'legacy-no-body', data: { status: 'ok' }, packInObject: true };
+      this.localApiEvent.emit(`response/${state.id}`, response);
     } catch (e) {
       this.error(e);
     }
@@ -112,21 +135,142 @@ class LocalApi extends Homey.App {
    * @param args The arguments passed to the action card
    * @param state The state of the action card
    */
-  responseWithActionRunListener = async (args: LocalApiRequestArgs & { body?: string }, state: LocalApiRequestState) => {
+  responseWithBodyRunListener = async (args: LocalApiRequestWithBodyArgs, state: LocalApiRequestState) => {
     let response: LocalApiResponse | undefined;
     try {
-      response = { type: 'body-json', data: JSON.parse(args.body || '{}') };
+      response = { type: 'legacy-json', data: JSON.parse(args.body || '{}'), packInObject: true };
     } catch (e) {
       response = {
-        type: 'body-invalid-json', message: 'Invalid JSON', error: e instanceof Error ? e.message : undefined, original: args.body,
+        type: 'legacy-invalid-json',
+        message: 'Invalid JSON',
+        error: e instanceof Error ? e.message : undefined,
+        original: args.body,
+        packInObject: true,
       };
     }
     try {
-      this.localApiEvent.emit(`responseAction/${state.id}`, response);
+      this.localApiEvent.emit(`response/${state.id}`, response);
     } catch (e) {
       this.error(e);
     }
     return true;
+  };
+
+  isValidStatusCode(statusCode: unknown): statusCode is number {
+    return typeof statusCode === 'number' && statusCode >= 100 && statusCode <= 599;
+  }
+
+  isValidHeaders(headers: unknown): headers is Record<string, string> {
+    if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
+      return false;
+    }
+    for (const key of Object.keys(headers)) {
+      if (!key.match(/^[a-zA-Z]+[a-zA-Z0-9-]+$/)) {
+        return false;
+      }
+      const value = (headers as any)[key];
+      if (typeof value !== 'string') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Run listener for the response with object action Flow Card
+   * @param args The arguments passed to the action card
+   * @param state The state of the action card
+   */
+  responseWithObjRunListener = async (args: LocalApiRequestWithObjArgs, state: LocalApiRequestState) => {
+    let response: LocalApiResponse | undefined;
+    try {
+      if (!args.response) {
+        throw new Error('No response object provided');
+      }
+      const data = JSON.parse(args.response);
+      if (typeof data !== 'object') {
+        throw new Error(`Response JSON is not an object (got ${typeof data})`);
+      }
+      if (!this.isValidStatusCode(data.status)) {
+        throw new Error('Response object does not contain a status field, or it is not a valid HTTP status code');
+      }
+      const headers = data.headers || {};
+      if (!this.isValidHeaders(headers)) {
+        throw new Error('Invalid headers object (keys must be strings, values must be strings)');
+      }
+      const body: unknown = data.body || undefined;
+
+      // Detect content-type if not provided in headers:
+      if (!Object.keys(headers).some((key) => key.toLowerCase() === 'content-type')) {
+        headers['Content-Type'] = typeof body === 'string' ? 'text/plain; charset=utf-8' : 'application/json';
+      }
+
+      response = {
+        type: 'advanced-response', status: data.status, headers, body, packInObject: false,
+      };
+    } catch (e) {
+      response = {
+        type: 'advanced-error',
+        message: 'Invalid response object',
+        error: e instanceof Error ? e.message : undefined,
+        packInObject: false,
+      };
+    }
+    try {
+      this.localApiEvent.emit(`response/${state.id}`, response);
+    } catch (e) {
+      this.error(e);
+    }
+    return true;
+  };
+
+  /**
+   * Run listener for the advanced response action Flow Card
+   * @param args The arguments passed to the action card
+   * @param state The state of the action card
+   */
+  responseAdvancedRunListener = async (args: LocalApiRequestAdvancedArgs, state: LocalApiRequestState) => {
+    let response: LocalApiResponse | undefined;
+    try {
+      if (!this.isValidStatusCode(args.status)) {
+        throw new Error('Invalid status code');
+      }
+      const headers = JSON.parse(args.headers?.trim() || '{}');
+      let body: unknown = args.body?.trim() || undefined;
+      if (!this.isValidHeaders(headers)) {
+        throw new Error('Invalid headers object (keys must be strings, values must be strings)');
+      }
+
+      // Try to unpack the body as JSON if it is a string, and set the content-type header accordingly if it is not set
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+          if (!Object.keys(headers).some((key) => key.toLowerCase() === 'content-type')) {
+            headers['Content-Type'] = 'application/json';
+          }
+        } catch (e) {
+          if (!Object.keys(headers).some((key) => key.toLowerCase() === 'content-type')) {
+            headers['Content-Type'] = 'text/plain; charset=utf-8';
+          }
+        }
+      }
+
+      response = {
+        type: 'advanced-response', status: args.status, headers, body, packInObject: false,
+      };
+    } catch (e) {
+      response = {
+        type: 'advanced-error',
+        message: 'Invalid response object',
+        error: e instanceof Error ? e.message : undefined,
+        packInObject: false,
+      };
+    }
+    try {
+      this.localApiEvent.emit(`response/${state.id}`, response);
+    } catch (e) {
+      this.error(e);
+    }
   };
 
   /**
@@ -179,11 +323,7 @@ class LocalApi extends Homey.App {
       card.trigger(flowTokens, state).then(() => {});
 
       const response = await this.waitForResponse(state.id);
-      if (this.homey.settings.get('rawOutput')) {
-        this.rawResponse(res, response);
-      } else {
-        this.fullResponse(req, res, response);
-      }
+      this.response(req, res, response);
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'error', message: e instanceof Error ? e.message : 'Unknown error' }));
@@ -195,43 +335,57 @@ class LocalApi extends Homey.App {
 
   waitForResponse(id: number): Promise<LocalApiResponse> {
     const successfulOrError = new Promise<LocalApiResponse>((resolve) => {
-      this.localApiEvent.once(`responseAction/${id}`, (body: LocalApiResponse) => resolve(body));
+      this.localApiEvent.once(`response/${id}`, (body: LocalApiResponse) => resolve(body));
     });
     const timeout = new Promise<LocalApiResponse>((resolve) => {
-      setTimeout(() => resolve({ type: 'timeout' }), this.TIMEOUT);
+      setTimeout(() => resolve({ type: 'timeout', packInObject: false }), this.TIMEOUT);
     });
 
     return Promise.race([successfulOrError, timeout]);
   }
 
-  /**
-   * This handles a a response without packing it into a top-level object (new in v1.2.0)
-   */
-  rawResponse(res: ServerResponse, value: LocalApiResponse) {
+  pack(req: IncomingMessage, value: LocalApiResponse): string {
+    if (value.packInObject && value.type === 'legacy-invalid-json') {
+      // TODO: Figure out if this was actually packed inside a success object in the legacy flow card
+      return JSON.stringify({
+        status: 'error', message: value.message, error: value.error, original: value.original,
+      });
+    }
+    if (value.packInObject) {
+      return JSON.stringify({
+        status: 'success', url: req.url, method: req.method, data: value.data,
+      });
+    }
+
+    throw new Error('Unhandled response type: Only pass responses that should be packed in an object');
+  }
+
+  response(req: IncomingMessage, res: ServerResponse, value: LocalApiResponse) {
     switch (value.type) {
-      case 'timeout': {
-        const seconds = this.TIMEOUT / 1000;
+      case 'timeout':
         res.writeHead(408, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'timeout', message: `Request timed out after ${seconds} seconds` }));
+        res.end(JSON.stringify({
+          status: 'timeout',
+          message: `Timed out after ${(this.TIMEOUT / 1000)} seconds while waiting for a response. `
+            + 'Make sure your flow card is not stuck and that every possible error is handled (and also leads to a response).',
+        }));
         break;
-      }
-      case 'no-body': {
-        res.writeHead(204); // No content
-        res.end();
-        break;
-      }
-      case 'body-invalid-json': {
-        // Or maybe we should just return the original string body here? It's not necessarily
-        // an error, we could auto-detect the output type and set the content type accordingly.
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(value));
-        break;
-      }
-      case 'body-json': {
+      case 'legacy-invalid-json':
+      case 'legacy-json':
+      case 'legacy-no-body':
+        // Legacy flow cards always pack their content in a response object and return 200 OK, regardless of
+        // the actual status. We keep this behavior for backwards compatibility.
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(value.data));
+        res.end(this.pack(req, value));
         break;
-      }
+      case 'advanced-response':
+        res.writeHead(value.status, value.headers);
+        res.end(!value.body || typeof value.body === 'string' ? value.body : JSON.stringify(value.body));
+        break;
+      case 'advanced-error':
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'error', message: value.message, error: value.error }));
+        break;
       default: {
         // eslint-disable-next-line no-unused-vars
         const _unused: never = value;
@@ -240,18 +394,8 @@ class LocalApi extends Homey.App {
     }
   }
 
-  /**
-   * This handles a response by packing it into a top-level object (default pre v1.2.0)
-   */
-  fullResponse(req: IncomingMessage, res: ServerResponse, response: LocalApiResponse) {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'success', url: req.url, method: req.method, data: response,
-    }));
-  }
-
   cleanup(id: number, request: IncomingMessage, response: ServerResponse): void {
-    this.localApiEvent.removeAllListeners(`responseAction/${id}`);
+    this.localApiEvent.removeAllListeners(`response/${id}`);
     request.destroy();
     response.destroy();
   }
@@ -263,7 +407,9 @@ class LocalApi extends Homey.App {
     // Define Trigger Requests
     const requestReceivedTrigger = this.homey.flow.getTriggerCard('local-api-request-received');
     // Define Actions Responses
-    const responseWithAction = this.homey.flow.getActionCard('local-api-response-with');
+    const responseWithBody = this.homey.flow.getActionCard('local-api-response-with');
+    const responseWithObj = this.homey.flow.getActionCard('local-api-response-with-obj');
+    const responseAdv = this.homey.flow.getActionCard('local-api-response-with-adv');
     const responseWithOk = this.homey.flow.getActionCard('local-api-respond-with-200');
     // Retrieve Settings and initialize Local API App
     const serverPort = this.homey.settings.get('serverPort') || 3000;
@@ -271,7 +417,9 @@ class LocalApi extends Homey.App {
     this.localApiEvent.on('warning', (e) => this.error('warning', e.stack));
     this.localApiEvent.on('uncaughtException', (e) => this.error('uncaughtException', e.stack));
     requestReceivedTrigger.registerRunListener(this.requestReceivedTriggerRunListener);
-    responseWithAction.registerRunListener(this.responseWithActionRunListener);
+    responseWithBody.registerRunListener(this.responseWithBodyRunListener);
+    responseWithObj.registerRunListener(this.responseWithObjRunListener);
+    responseAdv.registerRunListener(this.responseAdvancedRunListener);
     responseWithOk.registerRunListener(this.responseWithOkRunListener);
     requestReceivedTrigger.on('update', async () => {
       this.log('LocalAPI: Found updated trigger, updating args... ');

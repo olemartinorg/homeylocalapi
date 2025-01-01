@@ -1,0 +1,24 @@
+{
+  "title": {
+    "en": "Advanced response with...",
+    "no": "Avansert svar med..."
+  },
+  "titleFormatted": {
+    "en": "Advanced response with [[response]]",
+    "no": "Avansert svar med [[response]]"
+  },
+  "hint": {
+    "en": "Return a custom response. The argument should be a string containing a valid JSON object matching { status: number, body?: string | object, headers?: object }",
+    "no": "Returner et tilpasset svar. Argumentet må være en streng som inneholder et gyldig JSON-objekt som matcher { status: number, body?: string | object, headers?: object }"
+  },
+  "args": [
+    {
+      "type": "text",
+      "name": "response",
+      "placeholder": {
+        "en": "JSON object",
+        "no": "JSON-objekt"
+      }
+    }
+  ]
+}

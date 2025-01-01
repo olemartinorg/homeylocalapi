@@ -15,10 +15,6 @@
     "AccessControlAllowOrigin": {
       "label": "Access-Control-Allow-Origin"
     },
-    "raw": {
-      "label": "Returner rå JSON-data?",
-      "description": "Responsene pakkes til vanlig inn i et response-objekt. Skru på denne for å bare returnere rå JSON-data uten respons-objekt."
-    },
     "save": "Lagre"
   }
 }

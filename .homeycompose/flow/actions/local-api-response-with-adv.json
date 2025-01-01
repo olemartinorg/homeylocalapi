@@ -1,0 +1,42 @@
+{
+  "title": {
+    "en": "Advanced response with...",
+    "no": "Avansert svar med..."
+  },
+  "titleFormatted": {
+    "en": "Advanced response with [[status]], [[headers]] and [[body]]",
+    "no": "Avansert svar med [[status]], [[headers]] og [[body]]"
+  },
+  "hint": {
+    "en": "Return a custom response. Status code must be >=100 and <=599. The body argument can be any string, and the headers argument should be a string containing a key-value JSON object.",
+    "no": "Returner et tilpasset svar. Stauskoden må være >=100 og <=599. Body-argumentet kan være en hvilken som helst streng, og headers-argumentet må være en streng som inneholder et JSON-objekt med nøkkelverdier."
+  },
+  "args": [
+    {
+      "type": "number",
+      "name": "status",
+      "placeholder": {
+        "en": "Status code",
+        "no": "Statuskode"
+      }
+    },
+    {
+      "type": "text",
+      "name": "headers",
+      "placeholder": {
+        "en": "Headers",
+        "no": "Headere"
+      },
+      "required": false
+    },
+    {
+      "type": "text",
+      "name": "body",
+      "placeholder": {
+        "en": "Body",
+        "no": "Body"
+      },
+      "required": false
+    }
+  ]
+}

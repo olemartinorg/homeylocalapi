@@ -15,9 +15,6 @@
     "AccessControlAllowOrigin": {
       "label": "Access-Control-Allow-Origin"
     },
-    "raw": {
-      "label": "Return raw JSON data?",
-      "description": "Responses are usually wrapped in a response object. Turn this on to return raw JSON data without a response object."
-    }
+    "save": "Save"
   }
 }
